@@ -1,0 +1,164 @@
+// Medverse Prisma Schema
+// PostgreSQL with pgvector extension for clinical similarity search
+
+generator client {
+  provider        = "prisma-client-js"
+  previewFeatures = ["postgresqlExtensions"]
+}
+
+datasource db {
+  provider   = "postgresql"
+  url        = env("DATABASE_URL")
+  extensions = [pgvector(map: "vector")]
+}
+
+enum TriagePriority {
+  NORMAL
+  URGENT
+  EMERGENCY_RED_FLAG
+}
+
+enum EncounterMode {
+  ALLOPATHIC_SOCRATES
+  AYUSH_DASHAVIDHA
+}
+
+enum ReviewStatus {
+  PENDING
+  ACCEPTED
+  EDITED
+  REJECTED
+}
+
+enum DocumentType {
+  PRESCRIPTION
+  LAB_REPORT
+  DISCHARGE_SUMMARY
+  AYUSH_CHIKITSA_PATRA
+  RADIOLOGY_REPORT
+  OTHER
+}
+
+model Patient {
+  id              String          @id @default(uuid())
+  abhaId          String?         @unique // Ayushman Bharat Health Account ID (e.g. 14-digit)
+  phone           String          @unique
+  name            String
+  age             Int
+  gender          String
+  language        String          @default("hi") // e.g. hi, en, mr, ta
+  consentGiven    Boolean         @default(false)
+  consentDate     DateTime?
+  
+  // AYUSH Prakriti profile (Vata, Pitta, Kapha assessment)
+  prakriti        String?         // e.g. "Vata-Pitta", "Kapha-Vata"
+  
+  // High-level triage status
+  triagePriority  TriagePriority  @default(NORMAL)
+  hasRedFlag      Boolean         @default(false)
+  
+  // Timestamps
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  // Relationships
+  encounters      Encounter[]
+  documents       Document[]
+  medicalEntities MedicalEntity[]
+
+  @@index([abhaId])
+  @@index([phone])
+  @@index([hasRedFlag])
+}
+
+model Encounter {
+  id              String          @id @default(uuid())
+  patientId       String
+  patient         Patient         @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  
+  mode            EncounterMode   @default(ALLOPATHIC_SOCRATES)
+  tokenNumber     String          // e.g., OPD-AIIMS-A104
+  
+  // Clinical Transcript & States
+  chiefComplaint  String
+  hpiStructured   Json            // Structured SOCRATES or Dashavidha Pariksha states
+  interviewLogs   Json            // Full dialogue turns [{sender, message, timestamp, state}]
+  
+  // AI Clinical Summary
+  aiSummary       String
+  doctorNotes     String?
+  reviewStatus    ReviewStatus    @default(PENDING)
+  reviewedBy      String?         // Doctor ID or name
+  reviewedAt      DateTime?
+
+  // Triage & Red-Flag
+  isRedFlag       Boolean         @default(false)
+  redFlagReason   String?         // e.g. "Acute chest pain with radiation to left arm"
+  triageScore     Int             @default(3) // 1 (resuscitation/emergency) to 5 (non-urgent)
+  
+  // HL7 FHIR Representation
+  fhirEncounterId String?
+  fhirBundle      Json?
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([patientId])
+  @@index([isRedFlag])
+  @@index([reviewStatus])
+}
+
+model Document {
+  id              String          @id @default(uuid())
+  patientId       String
+  patient         Patient         @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  
+  docType         DocumentType    @default(LAB_REPORT)
+  title           String
+  fileName        String
+  fileUrl         String?
+  scannedAt       DateTime        @default(now())
+  documentDate    DateTime?       // Clinical event date printed on record
+  
+  // Raw OCR & Structured Extraction
+  ocrRawText      String?
+  extractedJson   Json            // e.g. { "type": "Lab Report", "date": "2024-03-12", "entities": [...] }
+  isProcessed     Boolean         @default(false)
+  
+  // HL7 FHIR DiagnosticReport / DocumentReference
+  fhirResourceId  String?
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([patientId])
+  @@index([docType])
+}
+
+model MedicalEntity {
+  id              String          @id @default(uuid())
+  patientId       String
+  patient         Patient         @relation(fields: [patientId], references: [id], onDelete: Cascade)
+  
+  category        String          // LAB_VALUE, SYMPTOM, MEDICATION, ALLERGY, AYUSH_DOSHA, VITAL_SIGN
+  name            String          // e.g. "HbA1c", "Blood Pressure", "Metformin", "Mandagni"
+  value           String          // e.g. "8.2", "140/90", "500mg BD", "Diminished"
+  unit            String?         // e.g. "%", "mmHg", "mg"
+  isAbnormal      Boolean         @default(false)
+  recordedDate    DateTime        @default(now())
+  
+  // Standardized Coding (LOINC, SNOMED-CT, or NAMASTE AYUSH codes)
+  codingSystem    String?         // "LOINC", "SNOMED-CT", "NAMASTE-AYUSH"
+  code            String?         // e.g. "4548-4" for HbA1c
+  
+  // pgvector representation for clinical semantic similarity search
+  // In PostgreSQL pgvector: embedding Unsupported("vector(1536)")
+  embeddingVector Unsupported("vector(1536)")?
+
+  createdAt       DateTime        @default(now())
+  updatedAt       DateTime        @updatedAt
+
+  @@index([patientId])
+  @@index([name])
+  @@index([category])
+}

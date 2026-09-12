@@ -1,0 +1,82 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 15, 23, 42;
+  --background-start-rgb: 248, 250, 252;
+  --background-end-rgb: 241, 245, 249;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background: linear-gradient(
+      to bottom,
+      transparent,
+      rgb(var(--background-end-rgb))
+    )
+    rgb(var(--background-start-rgb));
+  min-height: 100vh;
+  font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+}
+
+/* Touch Accessibility for Kiosk Users (Minimum 48px) */
+.touch-btn {
+  min-height: 52px;
+  min-width: 52px;
+  font-size: 1.125rem;
+  font-weight: 600;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.75rem;
+  transition: all 0.15s ease-in-out;
+  user-select: none;
+  touch-action: manipulation;
+}
+
+.touch-btn:active {
+  transform: scale(0.97);
+}
+
+/* Red-flag Emergency Pulse Animation */
+@keyframes emergency-pulse {
+  0%, 100% {
+    box-shadow: 0 0 0 0 rgba(220, 38, 38, 0.7);
+  }
+  50% {
+    box-shadow: 0 0 0 16px rgba(220, 38, 38, 0);
+  }
+}
+
+.animate-red-flag {
+  animation: emergency-pulse 1.8s infinite cubic-bezier(0.66, 0, 0, 1);
+}
+
+/* Thermal Receipt Styling for Kiosk Summary */
+.receipt-paper {
+  background: #ffffff;
+  border: 1px dashed #cbd5e1;
+  position: relative;
+  box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.05), 0 8px 10px -6px rgba(0, 0, 0, 0.05);
+}
+
+.receipt-paper::before,
+.receipt-paper::after {
+  content: "";
+  position: absolute;
+  left: 0;
+  right: 0;
+  height: 8px;
+  background-size: 16px 8px;
+}
+
+.receipt-paper::before {
+  top: -8px;
+  background-image: radial-gradient(circle at 8px 8px, transparent 8px, #ffffff 8px);
+}
+
+.receipt-paper::after {
+  bottom: -8px;
+  background-image: radial-gradient(circle at 8px 0, transparent 8px, #ffffff 8px);
+}
