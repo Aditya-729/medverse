@@ -11,10 +11,13 @@
 
 ---
 
-## 🌟 Single-Link Project Summary
+## 🌟 Live Deployment & Single-Link Project Summary
 
 You can inspect the entire architecture, interactive flowcharts, live API tests, and workflow demonstrations on a single page:
-👉 **[Medverse Complete Single-Link Project Summary & Architecture](http://localhost:3000/overview)**
+- 🚀 **Live Production Deployment (Vercel):** **[https://frontend-inky-eight-53.vercel.app](https://frontend-inky-eight-53.vercel.app)**
+- 📑 **Single-Link Project Summary & Architecture:** **[https://frontend-inky-eight-53.vercel.app/overview](https://frontend-inky-eight-53.vercel.app/overview)**
+- 🏥 **Patient Self-Service Kiosk:** **[https://frontend-inky-eight-53.vercel.app/kiosk/onboarding](https://frontend-inky-eight-53.vercel.app/kiosk/onboarding)**
+- 🩺 **Doctor Command Center:** **[https://frontend-inky-eight-53.vercel.app/dashboard/doctor](https://frontend-inky-eight-53.vercel.app/dashboard/doctor)**
 
 ---
 
